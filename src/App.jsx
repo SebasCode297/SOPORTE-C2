@@ -69,17 +69,24 @@ function App() {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-dark)', color: 'white' }}>
+    <div className="app-container" style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg-dark)', color: 'white' }}>
       <Sidebar 
         activePage={currentPage} 
         onPageChange={setCurrentPage} 
         onLogout={handleLogout} 
       />
-      <main style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>
+      <main className="main-content" style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>
         <div className="animate-fade">
           {renderPage()}
         </div>
       </main>
+
+      <style>{`
+        @media (max-width: 768px) {
+          .app-container { flex-direction: column; }
+          .main-content { padding: 1.5rem 1rem 100px !important; }
+        }
+      `}</style>
     </div>
   );
 }

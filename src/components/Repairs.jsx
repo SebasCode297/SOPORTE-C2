@@ -17,7 +17,6 @@ const Repairs = () => {
   const { orders, updateOrder, customers } = useApp();
   const [selectedRepair, setSelectedRepair] = useState(null);
 
-  // Filtrar solo las órdenes que están en proceso de reparación o listas
   const ongoingRepairs = orders.filter(o => o.status === 'repairing' || o.status === 'received' || o.status === 'ready');
 
   const handleUpdate = (e) => {
@@ -38,7 +37,6 @@ const Repairs = () => {
 
   const sendWhatsApp = (order) => {
     const client = getClientData(order.client);
-    // Reporte detallado como pidió el usuario
     const message = `*REPORTE TÉCNICO - SOPORTE-PRO* 🛠️\n\n` +
                    `Hola *${order.client}*,\n\n` +
                    `Le informamos que el mantenimiento de su equipo *${order.device}* ha sido completado con éxito. ✅\n\n` +
@@ -64,7 +62,7 @@ const Repairs = () => {
         <p style={{ color: 'var(--text-muted)' }}>Gestiona el avance técnico y las notas de cada equipo.</p>
       </header>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '24px' }}>
+      <div className="grid-auto">
         {ongoingRepairs.map((repair) => (
           <div key={repair.id} className="card animate-fade" style={{ display: 'flex', flexDirection: 'column', gap: '20px', border: repair.status === 'ready' ? '1px solid var(--success)' : '1px solid var(--border)', background: repair.status === 'ready' ? 'rgba(52, 199, 89, 0.02)' : 'var(--card-bg)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
@@ -118,30 +116,30 @@ const Repairs = () => {
 
             <div style={{ background: 'rgba(255,255,255,0.02)', padding: '16px', borderRadius: '14px', border: '1px solid var(--border)' }}>
               <p style={{ fontWeight: 'bold', fontSize: '0.7rem', color: 'var(--primary)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Última Nota:
+                Notas Técnicas:
               </p>
               <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.6', color: repair.notes ? 'var(--text-main)' : 'var(--text-muted)' }}>
                 {repair.notes || "Sin notas todavía."}
               </p>
             </div>
 
-            <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ marginTop: 'auto', display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
               {repair.status === 'ready' ? (
-                <div style={{ display: 'flex', gap: '10px' }}>
+                <>
                   <button 
                     className="primary" 
-                    style={{ flex: 1, padding: '12px', background: '#25D366' }}
+                    style={{ flex: 1, minWidth: '120px', padding: '12px', background: '#25D366' }}
                     onClick={() => sendWhatsApp(repair)}
                   >
                     <Smartphone size={18} /> WhatsApp
                   </button>
                   <button 
-                    style={{ flex: 1, padding: '12px', background: 'transparent', color: 'var(--text-muted)', fontSize: '0.8rem', border: '1px solid var(--border)' }}
+                    style={{ flex: 1, minWidth: '120px', padding: '12px', background: 'transparent', color: 'var(--text-muted)', fontSize: '0.8rem', border: '1px solid var(--border)' }}
                     onClick={() => sendEmail(repair)}
                   >
-                    Notificar Email
+                    Email
                   </button>
-                </div>
+                </>
               ) : (
                 <button 
                   className="primary" 
@@ -156,14 +154,15 @@ const Repairs = () => {
         ))}
       </div>
 
-      {/* Modal de Actualización */}
+      {/* Modal de Actualización - Responsive */}
       {selectedRepair && (
         <div style={{ 
           position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', 
           background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', 
-          justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)'
+          justifyContent: 'center', zIndex: 3000, backdropFilter: 'blur(4px)',
+          padding: '20px'
         }}>
-          <div className="card animate-fade" style={{ width: '450px', padding: '32px' }}>
+          <div className="card animate-fade" style={{ width: '100%', maxWidth: '450px', padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
               <h3 style={{ margin: 0, border: 'none' }}>Actualizar Reparación</h3>
               <button onClick={() => setSelectedRepair(null)} style={{ background: 'transparent', padding: 4 }}><X size={20} /></button>
@@ -177,15 +176,15 @@ const Repairs = () => {
                   name="progress" 
                   min="0" max="100" 
                   defaultValue={selectedRepair.progress} 
-                  style={{ accentColor: 'var(--primary)' }}
+                  style={{ accentColor: 'var(--primary)', height: '10px' }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', marginBottom: '12px', fontSize: '0.85rem', fontWeight: 'bold' }}>NOTAS TÉCNICAS (Se enviarán al WhatsApp)</label>
+                <label style={{ display: 'block', marginBottom: '12px', fontSize: '0.85rem', fontWeight: 'bold' }}>NOTAS TÉCNICAS</label>
                 <textarea 
                   name="notes"
-                  placeholder="Ej: Se cambió pantalla y se hizo limpieza interna..."
+                  placeholder="Ej: Se cambió pantalla..."
                   defaultValue={selectedRepair.notes}
                   style={{ height: '100px', resize: 'none' }}
                   required
@@ -194,7 +193,7 @@ const Repairs = () => {
 
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button type="button" style={{ flex: 1, background: 'var(--bg-dark)' }} onClick={() => setSelectedRepair(null)}>Cancelar</button>
-                <button type="submit" className="primary" style={{ flex: 2 }}>Guardar Cambios</button>
+                <button type="submit" className="primary" style={{ flex: 2 }}>Guardar</button>
               </div>
             </form>
           </div>

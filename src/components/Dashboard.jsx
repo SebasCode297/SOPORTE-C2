@@ -35,7 +35,6 @@ const Dashboard = ({ onNavigate }) => {
     const formData = new FormData(e.target);
     const device = formData.get('device');
     
-    // 1. Verificar si el cliente ya existe
     const normalizedInquiryPhone = registeringInquiry.contact.replace(/\s+/g, '');
     const clientExists = customers.find(c => 
       c.phone.replace(/\s+/g, '') === normalizedInquiryPhone || 
@@ -43,7 +42,6 @@ const Dashboard = ({ onNavigate }) => {
     );
     
     if (!clientExists) {
-      // Registrar cliente nuevo con los datos del chatbot (incluyendo email)
       addCustomer({
         name: registeringInquiry.name,
         phone: registeringInquiry.contact,
@@ -52,14 +50,12 @@ const Dashboard = ({ onNavigate }) => {
       });
     }
 
-    // 2. Registrar la nueva orden de servicio vinculada
     addOrder({
       client: registeringInquiry.name,
       device: device,
       problem: registeringInquiry.problem,
     });
 
-    // 3. Eliminar la consulta
     deleteInquiry(registeringInquiry.id);
     setRegisteringInquiry(null);
     onNavigate('orders'); 
@@ -69,11 +65,11 @@ const Dashboard = ({ onNavigate }) => {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       <header>
         <h1 style={{ fontSize: '1.8rem' }}>Resumen Administrativo</h1>
-        <p style={{ color: 'var(--text-muted)' }}>Bienvenido de nuevo al panel de SOPORTE-PRO.</p>
+        <p style={{ color: 'var(--text-muted)' }}>Bienvenido al panel de SOPORTE-PRO.</p>
       </header>
 
-      {/* Stats Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+      {/* Stats Grid - Responsive via grid-auto */}
+      <div className="grid-auto">
         {stats.map((stat, i) => (
           <div 
             key={i} 
@@ -102,7 +98,7 @@ const Dashboard = ({ onNavigate }) => {
 
       {/* Section Consultas */}
       <div className="card" style={{ padding: '32px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '10px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ background: 'rgba(0,122,255,0.1)', padding: '10px', borderRadius: '12px' }}>
               <MessageSquare size={24} color="var(--primary)" />
@@ -115,11 +111,7 @@ const Dashboard = ({ onNavigate }) => {
         </div>
 
         {inquiries.length > 0 ? (
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', 
-            gap: '20px' 
-          }}>
+          <div className="grid-auto" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))' }}>
             {inquiries.map((iq) => (
               <div key={iq.id} style={{ 
                 background: 'rgba(255,255,255,0.02)', 
@@ -135,11 +127,11 @@ const Dashboard = ({ onNavigate }) => {
                     <div style={{ 
                       width: '40px', height: '40px', borderRadius: '12px', 
                       background: 'var(--primary)', display: 'flex', alignItems: 'center', 
-                      justifyContent: 'center', fontWeight: 'bold'
+                      justifyContent: 'center', fontWeight: 'bold', flexShrink: 0
                     }}>{(iq.name || 'C').charAt(0)}</div>
                     <div>
                       <p style={{ margin: 0, fontWeight: '800', fontSize: '1rem' }}>{iq.name || 'Cliente'}</p>
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                         <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--success)', fontWeight: 'bold' }}>{iq.contact}</p>
                         {iq.email && <Mail size={12} color="var(--text-muted)" title={iq.email} />}
                       </div>
@@ -177,14 +169,15 @@ const Dashboard = ({ onNavigate }) => {
         )}
       </div>
 
-      {/* Modal de Conversión */}
+      {/* Modal de Conversión - Responsive */}
       {registeringInquiry && (
         <div style={{ 
           position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', 
           background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', 
-          justifyContent: 'center', zIndex: 1200, backdropFilter: 'blur(4px)'
+          justifyContent: 'center', zIndex: 3000, backdropFilter: 'blur(4px)',
+          padding: '20px'
         }}>
-          <div className="card animate-fade" style={{ width: '420px', padding: '32px' }}>
+          <div className="card animate-fade" style={{ width: '100%', maxWidth: '420px', padding: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '24px' }}>
               <h3 style={{ fontSize: '1.2rem', margin: 0, border: 'none' }}>Registrar Orden</h3>
               <button onClick={() => setRegisteringInquiry(null)} style={{ background: 'transparent', padding: 4 }}><X size={20} /></button>
@@ -194,7 +187,7 @@ const Dashboard = ({ onNavigate }) => {
               <div style={{ background: 'rgba(255,255,255,0.03)', padding: '16px', borderRadius: '14px', border: '1px solid var(--border)' }}>
                 <p style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 'bold', marginBottom: '8px' }}>CLIENTE IDENTIFICADO:</p>
                 <p style={{ margin: 0, fontSize: '1rem', fontWeight: 'bold' }}>{registeringInquiry.name}</p>
-                <div style={{ display: 'flex', gap: '12px', marginTop: '4px', fontSize: '0.8rem' }}>
+                <div style={{ display: 'flex', gap: '12px', marginTop: '4px', fontSize: '0.8rem', flexWrap: 'wrap' }}>
                     <span style={{ color: 'var(--success)' }}>{registeringInquiry.contact}</span>
                     <span style={{ color: 'var(--text-muted)' }}>{registeringInquiry.email || 'Sin Correo'}</span>
                 </div>
@@ -221,21 +214,21 @@ const Dashboard = ({ onNavigate }) => {
         </div>
       )}
 
-      {/* Quick Access Grid Bottom */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-        <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px' }}>
+      {/* Quick Access Grid Bottom - Responsive via grid-auto */}
+      <div className="grid-auto">
+        <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px', flexWrap: 'wrap', gap: '16px' }}>
           <div>
             <h4 style={{ margin: 0 }}>Stock Crítico</h4>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '4px 0 0' }}>{inventory.filter(i => i.stock < 3).length} productos requieren atención.</p>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '4px 0 0' }}>{inventory.filter(i => i.stock < 3).length} productos críticos.</p>
           </div>
-          <button className="primary" onClick={() => onNavigate('inventory')}>Gestionar Stock</button>
+          <button className="primary" onClick={() => onNavigate('inventory')} style={{ width: '100%' }}>Gestionar</button>
         </div>
-        <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px' }}>
+        <div className="card" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px', flexWrap: 'wrap', gap: '16px' }}>
           <div>
-            <h4 style={{ margin: 0 }}>Cartera de Clientes</h4>
-            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '4px 0 0' }}>{customers.length} perfiles fidelizados.</p>
+            <h4 style={{ margin: 0 }}>Clientes</h4>
+            <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '4px 0 0' }}>{customers.length} perfiles registrados.</p>
           </div>
-          <button className="primary" onClick={() => onNavigate('customers')}>Ver Directorio</button>
+          <button className="primary" onClick={() => onNavigate('customers')} style={{ width: '100%' }}>Directorio</button>
         </div>
       </div>
     </div>

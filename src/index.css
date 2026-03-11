@@ -110,3 +110,58 @@ input:focus {
 .animate-fade {
   animation: fadeIn 0.5s ease forwards;
 }
+
+/* Responsive Utils */
+@media (max-width: 1024px) {
+  :root {
+    --side-width: 80px;
+  }
+}
+
+@media (max-width: 768px) {
+  :root {
+    --side-width: 0px;
+  }
+  
+  body {
+    padding-bottom: 70px; /* Space for mobile nav if needed */
+  }
+
+  .card {
+    padding: 16px;
+    border-radius: 16px;
+  }
+
+  h1 { font-size: 2.2rem !important; }
+  h2 { font-size: 1.8rem !important; }
+  h3 { font-size: 1.4rem !important; }
+
+  .responsive-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .desktop-only {
+    display: none !important;
+  }
+
+  section {
+    padding: 40px 20px !important;
+  }
+  
+  nav {
+    padding: 16px 20px !important;
+  }
+}
+
+/* Custom spacing for grid that should be responsive */
+.grid-auto {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+@media (max-width: 480px) {
+  .grid-auto {
+    grid-template-columns: 1fr;
+  }
+}
