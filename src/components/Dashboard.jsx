@@ -111,7 +111,7 @@ const Dashboard = ({ onNavigate }) => {
         </div>
 
         {inquiries.length > 0 ? (
-          <div className="grid-auto" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))' }}>
+          <div className="grid-auto" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
             {inquiries.map((iq) => (
               <div key={iq.id} style={{ 
                 background: 'rgba(255,255,255,0.02)', 

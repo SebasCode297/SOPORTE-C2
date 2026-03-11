@@ -62,7 +62,7 @@ const Repairs = () => {
         <p style={{ color: 'var(--text-muted)' }}>Gestiona el avance técnico y las notas de cada equipo.</p>
       </header>
 
-      <div className="grid-auto">
+      <div className="grid-auto" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))' }}>
         {ongoingRepairs.map((repair) => (
           <div key={repair.id} className="card animate-fade" style={{ display: 'flex', flexDirection: 'column', gap: '20px', border: repair.status === 'ready' ? '1px solid var(--success)' : '1px solid var(--border)', background: repair.status === 'ready' ? 'rgba(52, 199, 89, 0.02)' : 'var(--card-bg)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
