@@ -1,98 +1,133 @@
 import React, { useState, createContext, useContext, useEffect } from 'react';
+import { supabase } from '../lib/supabaseClient';
 
 const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-  // Función auxiliar para cargar datos del localStorage
-  const loadInitialData = (key, defaultValue) => {
-    const saved = localStorage.getItem(key);
-    return saved ? JSON.parse(saved) : defaultValue;
+  const [orders, setOrders] = useState([]);
+  const [customers, setCustomers] = useState([]);
+  const [inventory, setInventory] = useState([]);
+  const [inquiries, setInquiries] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Cargar datos iniciales desde Supabase
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      const { data: ordersData } = await supabase.from('orders').select('*').order('created_at', { ascending: false });
+      const { data: customersData } = await supabase.from('customers').select('*').order('name');
+      const { data: inventoryData } = await supabase.from('inventory').select('*').order('name');
+      const { data: inquiriesData } = await supabase.from('inquiries').select('*').order('created_at', { ascending: false });
+
+      if (ordersData) setOrders(ordersData);
+      if (customersData) setCustomers(customersData);
+      if (inventoryData) setInventory(inventoryData);
+      if (inquiriesData) setInquiries(inquiriesData);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const [orders, setOrders] = useState(() => loadInitialData('sp_orders', [
-    { id: 'OS-001', client: 'Juan Pérez', device: 'Laptop HP Pavilion', date: '2026-03-08', status: 'ready', problem: 'Cambio de teclado', progress: 100, notes: 'Se instaló teclado original. Teclas funcionando al 100%.' },
-    { id: 'OS-002', client: 'María García', device: 'MacBook Air M1', date: '2026-03-09', status: 'repairing', problem: 'No enciende', progress: 40, notes: 'Diagnosticado corto en línea de entrada. Se están pidiendo los integrados.' },
-  ]));
-
-  const [customers, setCustomers] = useState(() => loadInitialData('sp_customers', [
-    { id: 1, name: 'Juan Pérez', email: 'juan.perez@email.com', phone: '+593 98 765 4321', address: 'Av. Amazonas N24', services: 3 },
-    { id: 2, name: 'María García', email: 'maria.g@gmail.com', phone: '+593 99 123 4567', address: 'Cumbayá, Sector Sur', services: 1 },
-  ]));
-
-  const [inventory, setInventory] = useState(() => loadInitialData('sp_inventory', [
-    { id: 'INV-001', name: 'SSD Kingston 480GB', category: 'Almacenamiento', stock: 2, price: 45, status: 'low' },
-    { id: 'INV-002', name: 'Pasta Térmica MX-4', category: 'Mantenimiento', stock: 1, price: 12, status: 'critical' },
-  ]));
-
-  // Nuevo estado para consultas del chatbot
-  const [inquiries, setInquiries] = useState(() => loadInitialData('sp_inquiries', []));
-
-  // Guardar en localStorage cada vez que cambien los datos
   useEffect(() => {
-    localStorage.setItem('sp_orders', JSON.stringify(orders));
-  }, [orders]);
+    fetchData();
 
-  useEffect(() => {
-    localStorage.setItem('sp_customers', JSON.stringify(customers));
-  }, [customers]);
+    // Suscripción en tiempo real para Consultas (Inquiries)
+    const inquiriesSubscription = supabase
+      .channel('public:inquiries')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'inquiries' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          setInquiries(prev => [payload.new, ...prev]);
+        } else if (payload.eventType === 'DELETE') {
+          setInquiries(prev => prev.filter(i => i.id !== payload.old.id));
+        } else if (payload.eventType === 'UPDATE') {
+          setInquiries(prev => prev.map(i => i.id === payload.new.id ? payload.new : i));
+        }
+      })
+      .subscribe();
 
-  useEffect(() => {
-    localStorage.setItem('sp_inventory', JSON.stringify(inventory));
-  }, [inventory]);
+    // Suscripción para Órdenes
+    const ordersSubscription = supabase
+      .channel('public:orders')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          setOrders(prev => [payload.new, ...prev]);
+        } else if (payload.eventType === 'UPDATE') {
+          setOrders(prev => prev.map(o => o.id === payload.new.id ? payload.new : o));
+        }
+      })
+      .subscribe();
 
-  useEffect(() => {
-    localStorage.setItem('sp_inquiries', JSON.stringify(inquiries));
-  }, [inquiries]);
+    return () => {
+      supabase.removeChannel(inquiriesSubscription);
+      supabase.removeChannel(ordersSubscription);
+    };
+  }, []);
 
-  const addOrder = (order) => {
+  const addOrder = async (order) => {
     const newOrder = {
-      ...order,
-      id: `OS-00${orders.length + 1}`,
-      date: new Date().toISOString().split('T')[0],
+      client: order.client,
+      device: order.device,
+      problem: order.problem,
       status: 'received',
       progress: 0,
-      notes: ''
+      notes: '',
+      date: new Date().toISOString().split('T')[0]
     };
-    setOrders([newOrder, ...orders]);
+    
+    const { data, error } = await supabase.from('orders').insert([newOrder]).select();
+    if (!error && data) {
+      // El estado se actualizará vía suscripción o manualmente aquí para feedback rápido
+    }
   };
 
-  const addCustomer = (customer) => {
-    const newCustomer = {
-      ...customer,
-      id: Date.now(), // ID único basado en tiempo
-      services: 1
-    };
-    setCustomers([newCustomer, ...customers]);
+  const addCustomer = async (customer) => {
+    const { data, error } = await supabase.from('customers').insert([customer]).select();
+    if (!error && data) {
+      setCustomers(prev => [...prev, data[0]]);
+    }
   };
 
-  const updateOrder = (id, updates) => {
-    setOrders(orders.map(o => o.id === id ? { ...o, ...updates } : o));
+  const updateOrder = async (id, updates) => {
+    const { error } = await supabase.from('orders').update(updates).eq('id', id);
+    if (!error) {
+      // El estado se actualizará vía suscripción
+    }
   };
 
   const updateOrderStatus = (id, newStatus) => {
     updateOrder(id, { status: newStatus });
   };
 
-  const addInquiry = (inquiry) => {
+  const addInquiry = async (inquiry) => {
     const newInquiry = {
-      ...inquiry,
-      id: Date.now(),
-      date: new Date().toLocaleString(),
-      read: false
+      name: inquiry.name,
+      email: inquiry.email,
+      contact: inquiry.contact,
+      problem: inquiry.problem,
+      date: new Date().toLocaleString()
     };
-    setInquiries([newInquiry, ...inquiries]);
+    await supabase.from('inquiries').insert([newInquiry]);
   };
 
-  const deleteInquiry = (id) => {
-    setInquiries(inquiries.filter(i => i.id !== id));
+  const deleteInquiry = async (id) => {
+    await supabase.from('inquiries').delete().eq('id', id);
+  };
+
+  const updateInventory = async (id, updates) => {
+    await supabase.from('inventory').update(updates).eq('id', id);
+    setInventory(prev => prev.map(i => i.id === id ? { ...i, ...updates } : i));
   };
 
   return (
     <AppContext.Provider value={{ 
       orders, addOrder, updateOrder, updateOrderStatus, 
       customers, addCustomer,
-      inventory, setInventory,
-      inquiries, addInquiry, deleteInquiry
+      inventory, setInventory: updateInventory,
+      inquiries, addInquiry, deleteInquiry,
+      loading
     }}>
       {children}
     </AppContext.Provider>
